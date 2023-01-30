@@ -39,6 +39,9 @@ filebeat.inputs:
     id: wcs-application
     paths:
       - '/var/lib/docker/containers/*/*.log'
+    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:'
+    multiline.negate: false
+    multiline.match: after
 
 output.elasticsearch:
   hosts: [ http://elasticsearch:9200 ]
@@ -46,6 +49,7 @@ output.elasticsearch:
     - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
   username: filebeat_internal
   password: ${FILEBEAT_INTERNAL_PASSWORD}
+
 #output.logstash:
 #  hosts: ["logstash:5044"]
 
