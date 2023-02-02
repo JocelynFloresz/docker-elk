@@ -15,6 +15,35 @@ filebeat.autodiscover:
     # containers as they start and stop.
     - type: docker
       hints.enabled: true
+      templates:
+        - condition:
+            contains:
+              container.labels.collect_logs_with_filebeat: "backend"
+          config:
+            - type: container
+              format: docker
+              paths:
+                - '/var/lib/docker/containers/${data.docker.container.id}/*.log'
+              multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:|^\x{27}'
+              multiline.negate: false
+              multiline.match: after
+              processors:
+                - decode_json_fields:
+                    when.equals:
+                      docker.container.labels.decode_log_event_to_json_object: "true"
+                    fields: [ "log" ]
+                    target: ""
+                    overwrite_keys: true
+        - condition:
+            contains:
+              container.labels.collect_logs_with_filebeat: "frontend"
+            config:
+              - module: nginx
+                log:
+                  input:
+                    type: container
+                    paths:
+                      - '/var/lib/docker/containers/${data.docker.container.id}/*.log'
 
 processors:
   - add_cloud_metadata: ~
@@ -34,24 +63,24 @@ monitoring:
     username: beats_system
     password: ${BEATS_SYSTEM_PASSWORD}
 
-filebeat.inputs:
-  - type: container
-    id: wcs-application
-    paths:
-      - '/var/lib/docker/containers/*/*.log'
-    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:'
-    multiline.negate: false
-    multiline.match: after
+#filebeat.inputs:
+#  - type: container
+#    id: wcs-application
+#    paths:
+#      - '/var/lib/docker/containers/*/*.log'
+#    multiline.pattern: '^[[:space:]]+(at|\.{3})[[:space:]]+\b|^Caused by:|^''
+#    multiline.negate: false
+#    multiline.match: after
 
-output.elasticsearch:
-  hosts: [ http://elasticsearch:9200 ]
-  indices:
-    - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
-  username: filebeat_internal
-  password: ${FILEBEAT_INTERNAL_PASSWORD}
+#output.elasticsearch:
+#  hosts: [ http://elasticsearch:9200 ]
+#  indices:
+#    - index: "filebeat-%{[agent.version]}-%{+yyyy.MM.dd}"
+#  username: filebeat_internal
+#  password: ${FILEBEAT_INTERNAL_PASSWORD}
 
-#output.logstash:
-#  hosts: ["logstash:5044"]
+output.logstash:
+  hosts: ["logstash:5044"]
 
 ## HTTP endpoint for health checking
 ## https://www.elastic.co/guide/en/beats/filebeat/current/http-endpoint.html
