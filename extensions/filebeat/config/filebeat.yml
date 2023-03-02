@@ -37,13 +37,13 @@ filebeat.autodiscover:
         - condition:
             contains:
               container.labels.collect_logs_with_filebeat: "frontend"
-            config:
-              - module: nginx
-                log:
-                  input:
-                    type: container
-                    paths:
-                      - '/var/lib/docker/containers/${data.docker.container.id}/*.log'
+          config:
+            - module: nginx
+              log:
+                input:
+                  type: container
+                  paths:
+                    - '/var/lib/docker/containers/${data.docker.container.id}/*.log'
 
 processors:
   - add_cloud_metadata: ~
